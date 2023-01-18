@@ -13,8 +13,7 @@ struct LessonRow: View {
         
         VStack {
             HStack {
-                
-                AsyncImage(url: URL(string: lesson.thumbnail)) { phase in
+                AsyncCacheImage(url: lesson.thumbnail, animation: .easeIn, transition: .opacity) { phase in
                     switch phase {
                     case .empty:
                         ProgressView()
@@ -23,17 +22,15 @@ struct LessonRow: View {
                             .resizable()
                             .scaledToFill()
                             .frame(width: 120, height: 80)
-                            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    case .failure:
+                            .clipShape(RoundedRectangle(cornerRadius: 8, style:.continuous))
+                    case .failure(_):
                         Image(systemName: "questionmark")
                             .frame(width: 120, height: 80)
-
-                       default:
-                        Image(systemName: "questionmark")
-                            .frame(width: 120, height: 80)
-
+                    
+                    @unknown default:
+                        EmptyView()
                     }
-                                        
+                    
                 }
                 .frame(width: 120, height: 80)
                 .padding(.trailing, 8)
