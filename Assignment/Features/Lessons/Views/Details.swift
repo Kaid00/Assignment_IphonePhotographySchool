@@ -28,32 +28,47 @@ class Details: UIView {
         label.translatesAutoresizingMaskIntoConstraints = false
         label.numberOfLines = 0
         label.text = "What’s the secret to taking truly incredible iPhone photos? Learning how to use your iPhone camera is very important, but there’s something even more fundamental to iPhone photography that will help you take the photos of your dreams! Watch this video to learn some unique photography techniques and to discover your own key to success in iPhone photography!"
+        label.textAlignment = .natural
+    
         return label
     }()
     
-    private let nextLesson: UIButton = {
-       
-        let attachment = NSTextAttachment()
-        attachment.image = UIImage(systemName: "chevron.right")
-
-        let imageString = NSMutableAttributedString(attachment: attachment)
-        let textString = NSAttributedString(string: "Next lesson")
-        imageString.append(textString)
-
-        let label = UILabel()
-        label.attributedText = imageString
-        label.sizeToFit()
-        
-        let button = UIButton()
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.backgroundColor = .systemBlue
-//        button.setTitle("Next lesson", for: .normal)
-        button.setAttributedTitle(imageString, for: .normal)
-        button.setTitleColor(.white, for: .normal)
-        button.layer.cornerRadius = 8
-        button.layer.masksToBounds = true
-        
+    private let nextButton: UIButton = {
+        let button = UIButton(type: .system)
         return button
+    }()
+    
+    private let nextLessonButton: UIButton = {
+        var config = UIButton.Configuration.plain()
+        config.image = UIImage(systemName: "chevron.right")
+        config.imagePadding = 5
+        config.imagePlacement = .trailing
+        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(scale: .medium)
+        
+        let button = UIButton(type: .system)
+        button.configuration = config
+        button.configurationUpdateHandler = {  button in
+          var config = button.configuration
+
+          config?.imagePlacement = .trailing
+
+          config?.title = "Next lesson"
+
+          button.configuration = config
+        }
+        
+        button.translatesAutoresizingMaskIntoConstraints = false
+        button.setTitle("Next lesson", for: .normal)
+        button.addAction(
+          UIAction { _ in
+              // goto next lessoon
+            print("Touch inside")
+            
+          },
+          for: .touchUpInside
+        )
+        return button
+        
     }()
 
     
@@ -62,11 +77,13 @@ class Details: UIView {
         backgroundColor = UIColor(named: "background")
         addSubview(titleLabel)
         addSubview(descriptionLabel)
-        addSubview(nextLesson)
+        addSubview(nextLessonButton)
+
         
         configureConstraints()
 
     }
+    
     
     func configureConstraints() {
 
@@ -79,20 +96,21 @@ class Details: UIView {
         let descriptionLabelConstraints = [
             descriptionLabel.topAnchor.constraint(equalTo: titleLabel.bottomAnchor, constant: 15),
             descriptionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
-            descriptionLabel.trailingAnchor.constraint(equalTo: trailingAnchor)
+            descriptionLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -15)
         ]
         
-        let nextLessonConstraints = [
-            nextLesson.topAnchor.constraint(equalTo: descriptionLabel.bottomAnchor, constant: 25),
-            descriptionLabel.leadingAnchor.constraint(equalTo: trailingAnchor),
-            descriptionLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: 200),
-            nextLesson.widthAnchor.constraint(equalToConstant: 140),
-            nextLesson.heightAnchor.constraint(equalToConstant: 40)
+        let nextLessonButtonConstraints = [
+            nextLessonButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -50),
+            nextLessonButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
+            nextLessonButton.widthAnchor.constraint(equalToConstant: 140),
+            nextLessonButton.heightAnchor.constraint(equalToConstant: 40)
+
         ]
         
         NSLayoutConstraint.activate(titleLabelConstraints)
         NSLayoutConstraint.activate(descriptionLabelConstraints)
-        NSLayoutConstraint.activate(nextLessonConstraints)
+        NSLayoutConstraint.activate(nextLessonButtonConstraints)
+
         
     }
 

@@ -14,6 +14,7 @@ struct LessonList: View {
     var body: some View {
         
         ZStack {
+            Color("background").ignoresSafeArea()
             NavigationView {
                 
                 ZStack {
@@ -51,6 +52,7 @@ struct LessonList: View {
                 .background(Color("background"))
             }
         }
+        .preferredColorScheme(.dark)
 
     }
 }

@@ -9,16 +9,24 @@ import SwiftUI
 import AVKit
 
 struct LessonDetail: View {
-    @State var player = AVPlayer()
     var lesson: LessonObj
-    @State var play: Bool = false
-    @State var downloadingVideo: Bool = false
+    private let total: Double = 1
+
+    @StateObject var downloadManager = DownloadManager()
+    @State var player = AVPlayer()
+    @State private var play: Bool = false
+    @State private var progress: Double = 0.11
+    
+    @State private var nextLesson: Bool = false
+    
+    
     
     var body: some View {
         GeometryReader { geo in
             ZStack {
                 Color("background")
                     .ignoresSafeArea()
+                   
                 VStack(spacing: 0) {
                     
                     VideoPlayer(play: $play, video: lesson.video_url)
@@ -32,10 +40,11 @@ struct LessonDetail: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarTrailing) {
-                        if !downloadingVideo {
+                        if !downloadManager.isDownloaded && !downloadManager.isDownloading{
                             Button {
                                 withAnimation {
-                                    downloadingVideo = true
+                                    downloadManager.isDownloading = true
+                                    downloadManager.downloadFile(fileName: lesson.name, videoLink: lesson.video_url)
                                 }
                             } label: {
                                 HStack {
@@ -43,18 +52,36 @@ struct LessonDetail: View {
                                     Text("Download")
                                 }
                                 .font(.callout)
-
+                                
                             }
-                        } else {
+                        } else if !downloadManager.isDownloaded && downloadManager.isDownloading {
                             Button {
                                 withAnimation {
-                                    downloadingVideo = false
+                                    downloadManager.isDownloading = false
+                                    downloadManager.reset()
                                 }
                             } label: {
                                 HStack {
-                                    ProgressView()
-                                        .padding(.trailing, 10)
+                                    ProgressView(value: downloadManager.progress, total: total)
+                                        .progressViewStyle(GaugeProgressStyle())
+                                        .frame(width: 18, height: 18)
+                                        .contentShape(Rectangle())
+                                        .padding()
+                                    
                                     Text("Cancel download")
+                                }
+
+                            }
+                        }
+                        else {
+                            Button {
+                                withAnimation {
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "checkmark.icloud")
+
+                                    Text("Downloaded")
                                 }
 
                             }
@@ -62,6 +89,9 @@ struct LessonDetail: View {
                         
                         
                     }
+                }
+                .onAppear {
+                    downloadManager.checkFileExist(fileName: lesson.name)
                 }
                 
             }
@@ -153,5 +183,26 @@ struct lessonDetailRepresentable: UIViewRepresentable {
     
     func updateUIView(_ uiView: Details, context: Context) {
         //
+    }
+}
+
+
+struct GaugeProgressStyle: ProgressViewStyle {
+    var strokeColor = Color.blue
+    var strokeWidth = 3.0
+
+    func makeBody(configuration: Configuration) -> some View {
+        let fractionCompleted = configuration.fractionCompleted ?? 0
+
+        return ZStack {
+            Circle()
+                .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .opacity(0.2)
+                
+            Circle()
+                .trim(from: 0, to: fractionCompleted)
+                .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
+                .rotationEffect(.degrees(-90))
+        }
     }
 }
