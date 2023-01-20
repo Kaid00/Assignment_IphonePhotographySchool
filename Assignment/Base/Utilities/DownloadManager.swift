@@ -212,4 +212,5 @@ final class DownloadManager: ObservableObject {
         dataTask?.cancel()
         self.progress = 0
     }
+    
 }
