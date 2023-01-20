@@ -10,14 +10,12 @@ import AVKit
 
 struct LessonDetail: View {
     var lesson: LessonObj
-    private let total: Double = 1
-    @ObservedObject var networkMonitor = NetworkMonitor()
-    @StateObject var downloadManager = DownloadManager()
-    @State var player = AVPlayer()
-    @State private var play: Bool = false
-    @State private var progress: Double = 0.11
+    @Binding var path: NavigationPath
+    var lessonsArray: [LessonObj]
     
-    @State private var nextLesson: Bool = false
+    @StateObject var viewModel = LessonDetailViewModel()
+    @ObservedObject var networkMonitor = NetworkMonitor()
+    @StateObject var downloadManager = DownloadManager()    
     @State var connected: Bool = true
     
     
@@ -26,21 +24,24 @@ struct LessonDetail: View {
             ZStack {
                 Color("background")
                     .ignoresSafeArea()
-                   
+                
                 VStack(spacing: 0) {
-                   
+                    
                     VideoPlayer(
-                        play: $play,
+                        play: $viewModel.play,
                         video: lesson.video_url,
                         online: $networkMonitor.isConnected,
                         playerItem: downloadManager.getVideoFileAsset(fileName: lesson.name)
                     )
-                        .frame(height: UIDevice.current.orientation.isLandscape ? geo.size.height / 3 : geo.size.height / 3)
-                        .overlay {
-                            if !play { thumbnail }
-                        }
+                    .frame(height: UIDevice.current.orientation.isLandscape ? geo.size.height / 3 : geo.size.height / 3)
+                    .overlay {
+                        if !viewModel.play { thumbnail }
+                    }
                     
                     lessonDetailRepresentable(lesson: lesson)
+                    
+                    nextLessonBtn
+  
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -52,7 +53,7 @@ struct LessonDetail: View {
                                     .font(.caption2)
                             }
                         }
-                       
+                        
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         if !downloadManager.isDownloaded && !downloadManager.isDownloading{
@@ -77,7 +78,7 @@ struct LessonDetail: View {
                                 }
                             } label: {
                                 HStack {
-                                    ProgressView(value: downloadManager.progress, total: total)
+                                    ProgressView(value: downloadManager.progress, total: 1)
                                         .progressViewStyle(GaugeProgressStyle())
                                         .frame(width: 18, height: 18)
                                         .contentShape(Rectangle())
@@ -85,7 +86,7 @@ struct LessonDetail: View {
                                     
                                     Text("Cancel download")
                                 }
-
+                                
                             }
                         }
                         else {
@@ -95,14 +96,13 @@ struct LessonDetail: View {
                             } label: {
                                 HStack {
                                     Image(systemName: "checkmark.icloud")
-
+                                    
                                     Text("Downloaded")
                                 }
-
+                                
                             }
                         }
-                        
-                        
+         
                     }
                 }
                 
@@ -111,13 +111,46 @@ struct LessonDetail: View {
                 }
                 
             }
-         
+            
         }
         .onAppear {
             downloadManager.checkFileExist(fileName: lesson.name)
-            
+
+            viewModel.goToNext(lessonsArray, currentLesson: lesson)
         }
-   
+        .onDisappear {
+            viewModel.play = false
+        }
+        
+    }
+    var nextLessonBtn: some View {
+        Button {
+            if !viewModel.islastLesson {
+                path.append(lessonsArray[viewModel.nextLessonIndex])
+            } else {
+                path.removeLast(path.count)
+            }
+            
+        } label: {
+            if !viewModel.islastLesson {
+                HStack {
+                    Text("Next lesson")
+                    
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.accentColor)
+                }
+            } else {
+                HStack {
+                    Text("Back to lessons")
+                    
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.accentColor)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
+        .padding(.trailing, 24)
+        .offset(y: -50)
     }
     
     var thumbnail: some View {
@@ -135,7 +168,7 @@ struct LessonDetail: View {
                         .frame(width: 120, height: 80)
                 @unknown default:
                     EmptyView()
-                
+                    
                 }
                 
             }
@@ -150,69 +183,18 @@ struct LessonDetail: View {
         .onTapGesture {
             withAnimation {
                 
-                play = true
+                viewModel.play = true
             }
         }
-
+        
     }
 }
 
 struct LessonDetail_Previews: PreviewProvider {
     static var previews: some View {
-        LessonDetail(lesson: mockLesson)
+        LessonDetail(lesson: mockLesson, path: .constant(NavigationPath()), lessonsArray: mockLessonArray)
     }
 }
 
-struct VideoPlayer : UIViewControllerRepresentable {
-    @Binding var play: Bool
-    var video: String
-    @Binding var online: Bool
-    var playerItem: AVPlayerItem?
-    
-    func makeUIViewController(context: UIViewControllerRepresentableContext<VideoPlayer>) -> AVPlayerViewController {
-        let controller = AVPlayerViewController()
-        
-        if playerItem != nil {
-            let player = AVPlayer(playerItem: playerItem)
-            controller.player = player
-        } else {
-            let player1 = AVPlayer(url: URL(string: video)!)
-            controller.player = player1
-        }
-        controller.showsPlaybackControls = true
-        controller.videoGravity = .resize
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: AVPlayerViewController, context: UIViewControllerRepresentableContext<VideoPlayer>) {
-        if play {
-            uiViewController.player?.play()
-            
-        }
-    
-    }
-}
-
-
-
-struct lessonDetailRepresentable: UIViewRepresentable {
-    var lesson: LessonObj
-    
-    func makeUIView(context: Context) -> Details {
-        let view = Details()
-        view.configure(with: LessonObj(
-            id: lesson.id,
-            name: lesson.name,
-            description: lesson.description,
-            thumbnail: lesson.thumbnail,
-            video_url: lesson.video_url)
-        )        
-        return view
-    }
-    
-    func updateUIView(_ uiView: Details, context: Context) {
-        //
-    }
-}
 
 

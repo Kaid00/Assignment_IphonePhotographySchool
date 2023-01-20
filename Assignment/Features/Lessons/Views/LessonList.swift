@@ -6,17 +6,17 @@
 //
 
 import SwiftUI
-
 struct LessonList: View {
     
     @StateObject private var viewModel = LessonsViewModel()
+    @State private var path = NavigationPath()
 
     var body: some View {
         
         ZStack {
             Color("background").ignoresSafeArea()
-            NavigationView {
-                
+            NavigationStack(path: $path) {
+    
                 ZStack {
                     if viewModel.isFetching {
                         ZStack {
@@ -29,28 +29,27 @@ struct LessonList: View {
                     } else {
                         ScrollView(showsIndicators: false) {
                             ForEach(viewModel.lessons) { lesson in
-                                NavigationLink {
-                                    LessonDetail(lesson: lesson)
-                                } label: {
+                                NavigationLink(value: lesson) {
                                     LessonRow(lesson: lesson)
                                 }
+
                             }
                             .navigationTitle("Lessons")
                         }
                         .ignoresSafeArea(edges: .bottom)
+                        .navigationDestination(for: LessonObj.self) { lesson in
+                            LessonDetail(lesson: lesson, path: $path, lessonsArray: viewModel.lessons)
+                        }
                     }
                    
                 }
-                .task {viewModel.fetchLessons()}
-                .alert(isPresented: $viewModel.errorOccurred, error: viewModel.error) {
-                    Button{
-                        viewModel.fetchLessons()
-                    } label: {
-                        Text("Retry")
-                    }
+                .task {
+                    viewModel.fetchLessons()
+                
                 }
                 .background(Color("background"))
             }
+
         }
         .preferredColorScheme(.dark)
 
