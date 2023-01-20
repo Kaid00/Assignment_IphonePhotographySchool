@@ -11,14 +11,14 @@ import AVKit
 struct LessonDetail: View {
     var lesson: LessonObj
     private let total: Double = 1
-
+    @ObservedObject var networkMonitor = NetworkMonitor()
     @StateObject var downloadManager = DownloadManager()
     @State var player = AVPlayer()
     @State private var play: Bool = false
     @State private var progress: Double = 0.11
     
     @State private var nextLesson: Bool = false
-    
+    @State var connected: Bool = true
     
     
     var body: some View {
@@ -28,8 +28,13 @@ struct LessonDetail: View {
                     .ignoresSafeArea()
                    
                 VStack(spacing: 0) {
-                    
-                    VideoPlayer(play: $play, video: lesson.video_url)
+                   
+                    VideoPlayer(
+                        play: $play,
+                        video: lesson.video_url,
+                        online: $networkMonitor.isConnected,
+                        playerItem: downloadManager.getVideoFileAsset(fileName: lesson.name)
+                    )
                         .frame(height: UIDevice.current.orientation.isLandscape ? geo.size.height / 3 : geo.size.height / 3)
                         .overlay {
                             if !play { thumbnail }
@@ -39,6 +44,16 @@ struct LessonDetail: View {
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    ToolbarItem(placement: .principal) {
+                        if !networkMonitor.isConnected || !connected {
+                            HStack(spacing: 6) {
+                                ProgressView()
+                                Text("Connecting...")
+                                    .font(.caption2)
+                            }
+                        }
+                       
+                    }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         if !downloadManager.isDownloaded && !downloadManager.isDownloading{
                             Button {
@@ -90,11 +105,17 @@ struct LessonDetail: View {
                         
                     }
                 }
-                .onAppear {
-                    downloadManager.checkFileExist(fileName: lesson.name)
+                
+                .onTapGesture {
+                    connected = NetworkMonitor().isConnected
                 }
                 
             }
+         
+        }
+        .onAppear {
+            downloadManager.checkFileExist(fileName: lesson.name)
+            
         }
    
     }
@@ -128,6 +149,7 @@ struct LessonDetail: View {
         }
         .onTapGesture {
             withAnimation {
+                
                 play = true
             }
         }
@@ -144,13 +166,19 @@ struct LessonDetail_Previews: PreviewProvider {
 struct VideoPlayer : UIViewControllerRepresentable {
     @Binding var play: Bool
     var video: String
+    @Binding var online: Bool
+    var playerItem: AVPlayerItem?
     
     func makeUIViewController(context: UIViewControllerRepresentableContext<VideoPlayer>) -> AVPlayerViewController {
-        
-        let player1 = AVPlayer(url: URL(string: video)!)
-        
         let controller = AVPlayerViewController()
-        controller.player = player1
+        
+        if playerItem != nil {
+            let player = AVPlayer(playerItem: playerItem)
+            controller.player = player
+        } else {
+            let player1 = AVPlayer(url: URL(string: video)!)
+            controller.player = player1
+        }
         controller.showsPlaybackControls = true
         controller.videoGravity = .resize
         return controller
@@ -161,6 +189,7 @@ struct VideoPlayer : UIViewControllerRepresentable {
             uiViewController.player?.play()
             
         }
+    
     }
 }
 
@@ -187,22 +216,3 @@ struct lessonDetailRepresentable: UIViewRepresentable {
 }
 
 
-struct GaugeProgressStyle: ProgressViewStyle {
-    var strokeColor = Color.blue
-    var strokeWidth = 3.0
-
-    func makeBody(configuration: Configuration) -> some View {
-        let fractionCompleted = configuration.fractionCompleted ?? 0
-
-        return ZStack {
-            Circle()
-                .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
-                .opacity(0.2)
-                
-            Circle()
-                .trim(from: 0, to: fractionCompleted)
-                .stroke(strokeColor, style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-    }
-}
