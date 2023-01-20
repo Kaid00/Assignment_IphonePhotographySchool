@@ -30,7 +30,7 @@ final class Lesson_UITests: XCTestCase {
         // Given
         let LessonList = app.navigationBars["Lessons"].staticTexts["Lessons"]
         let lesson = app.scrollViews.otherElements.buttons["The Key To Success In iPhone Photography"]
-
+        sleep(2)
         lesson.tap()
         
         let backButton = app.navigationBars["_TtGC7SwiftUI32NavigationStackHosting"].buttons["Lessons"]
@@ -47,6 +47,7 @@ final class Lesson_UITests: XCTestCase {
         lesson.tap()
         
         let nextLessonButton = app.buttons["Next lesson"]
+        sleep(1)
         nextLessonButton.tap()
         
         let navBtn = app.navigationBars["_TtGC7SwiftUI32NavigationStackHosting"]
@@ -96,7 +97,8 @@ final class Lesson_UITests: XCTestCase {
         let app = XCUIApplication()
         let scrollViewsQuery = app.scrollViews
         let elementsQuery = scrollViewsQuery.otherElements
-       
+        
+        sleep(3)
         elementsQuery.buttons["Secrets For Capturing Beautiful iPhone Portrait Photos"].tap()
         app.buttons["Back to lessons"].tap()
         
