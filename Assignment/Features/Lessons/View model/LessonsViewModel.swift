@@ -10,6 +10,7 @@ import Combine
 
 final class LessonsViewModel: ObservableObject {
     
+    private var downloadManager = DownloadManager()
     @Published var lessons = [LessonObj]()
     @Published var errorOccurred: Bool = false
     @Published var error: LessonError?
@@ -28,12 +29,17 @@ final class LessonsViewModel: ObservableObject {
                     
                     guard let response = res.response as? HTTPURLResponse,
                           response.statusCode >= 200 && response.statusCode <= 300 else {
+
+                       
                         throw LessonError.invalidStatusCode
                     }
                     
                     guard let lessons = try? JSONDecoder().decode(Lesson.self, from: res.data) else {
                         throw LessonError.failedToDecode
                     }
+                    
+                    self.downloadManager.downloadJSON(data: res.data)
+
                     
                     return lessons.lessons
                 })
@@ -45,6 +51,7 @@ final class LessonsViewModel: ObservableObject {
                     case .failure(let error):
                         self?.errorOccurred = true
                         self?.error = LessonError.custom(error: error)
+                        self?.fetchLocalLessons()
                     default: break
                     }
                     
@@ -53,6 +60,11 @@ final class LessonsViewModel: ObservableObject {
                 }
                 .store(in: &bag)
         }
+    }
+    
+    func fetchLocalLessons() {
+        self.lessons =  self.downloadManager.getLocalLessons()
+        
     }
     
 }

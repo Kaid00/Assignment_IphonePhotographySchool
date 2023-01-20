@@ -16,8 +16,61 @@ final class DownloadManager: ObservableObject {
     @Published private(set) var progress: Double = 0
     @Published private(set) var dataTask: URLSessionDataTask?
     
+    func formatFileName(name: String) -> String{
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        
+        let formattedName = trimmed.replacingOccurrences(of: " ", with: "_")
+        
+        return formattedName
+        
+    }
+    func downloadJSON(data: Data) {
+        let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        let destinationUrl = docsUrl?.appendingPathComponent("localLessonsData")
+
+        if let destinationUrl = destinationUrl {
+            #if DEBUG
+            print("File is exist")
+            #endif
+            if FileManager().fileExists(atPath: destinationUrl.path) {
+                do {
+                    try FileManager().removeItem(atPath: destinationUrl.path)
+#if DEBUG
+print("Existing file deleted")
+#endif
+                    DispatchQueue.main.async {
+                        do{
+                            try data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
+#if DEBUG
+print("File replaced")
+#endif
+                        } catch let error {
+                            print("Error writing json:", error)
+                        }
+                    }
+                } catch let error {
+                    print("Error while deleting video file:", error)
+                }
+             
+                
+            } else {
+                DispatchQueue.main.async {
+                    do{
+                        try data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
+#if DEBUG
+print("File saved")
+#endif
+                    }catch let error {
+                        print("Error writing json:", error)
+                    }
+                }
+            }
+        }
+    }
+    
+  
     func downloadFile(fileName: String, videoLink: String) {
-        let formattedFileName = fileName.replacingOccurrences(of: " ", with: "_")
+        let formattedFileName = formatFileName(name: fileName)
 
         isDownloading = true
         isDownloaded = false
@@ -114,12 +167,12 @@ final class DownloadManager: ObservableObject {
     
     
     func checkFileExist(fileName: String) {
-        let formattedFileName = fileName.replacingOccurrences(of: " ", with: "_")
+        let formattedFileName = formatFileName(name: fileName)
         let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
         
         let destinationUrl = docsUrl?.appendingPathComponent("\(formattedFileName).mp4")
         if let destinationUrl = destinationUrl {
-            if (FileManager().fileExists(atPath: destinationUrl.path())) {
+            if (FileManager().fileExists(atPath: destinationUrl.path)) {
                 isDownloaded = true
             } else {
                 isDownloaded = false
@@ -130,13 +183,13 @@ final class DownloadManager: ObservableObject {
     }
     
     func getVideoFileAsset(fileName: String) -> AVPlayerItem? {
-        let formattedFileName = fileName.replacingOccurrences(of: " ", with: "_")
+        let formattedFileName = formatFileName(name: fileName)
 
         let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
 
         let destinationUrl = docsUrl?.appendingPathComponent("\(formattedFileName).mp4")
         if let destinationUrl = destinationUrl {
-            if (FileManager().fileExists(atPath: destinationUrl.path())) {
+            if (FileManager().fileExists(atPath: destinationUrl.path)) {
                 let avAsset = AVAsset(url: destinationUrl)
                 return AVPlayerItem(asset: avAsset)
             } else {
@@ -147,6 +200,26 @@ final class DownloadManager: ObservableObject {
             return nil
         }
        
+    }
+    
+    func getLocalLessons() -> [LessonObj] {
+        var localLessons = [LessonObj]()
+        let docsUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
+        
+        let destinationUrl = docsUrl?.appendingPathComponent("localLessonsData")
+
+        if let destinationUrl = destinationUrl {
+            if (FileManager().fileExists(atPath: destinationUrl.path)) {
+                do {
+                    let value = try Data(contentsOf: destinationUrl)
+                    localLessons = try JSONDecoder().decode(Lesson.self, from: value).lessons
+                } catch {
+                }
+            } else {
+            }
+        }
+        return localLessons
+
     }
     
     func reset() {
