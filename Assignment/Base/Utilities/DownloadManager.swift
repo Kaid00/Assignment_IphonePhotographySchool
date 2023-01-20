@@ -29,21 +29,12 @@ final class DownloadManager: ObservableObject {
         let destinationUrl = docsUrl?.appendingPathComponent("localLessonsData")
 
         if let destinationUrl = destinationUrl {
-            #if DEBUG
-            print("File is exist")
-            #endif
             if FileManager().fileExists(atPath: destinationUrl.path) {
                 do {
                     try FileManager().removeItem(atPath: destinationUrl.path)
-#if DEBUG
-print("Existing file deleted")
-#endif
                     DispatchQueue.main.async {
                         do{
                             try data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-#if DEBUG
-print("File replaced")
-#endif
                         } catch let error {
                             print("Error writing json:", error)
                         }
@@ -57,10 +48,11 @@ print("File replaced")
                 DispatchQueue.main.async {
                     do{
                         try data.write(to: destinationUrl, options: Data.WritingOptions.atomic)
-#if DEBUG
-print("File saved")
-#endif
+                    #if DEBUG
+                    print("File saved")
+                    #endif
                     }catch let error {
+                        
                         print("Error writing json:", error)
                     }
                 }
@@ -81,9 +73,6 @@ print("File saved")
         
         if let destinationUrl = destinationUrl {
             if FileManager().fileExists(atPath: destinationUrl.path) {
-                #if DEBUG
-                print("File already exists")
-                #endif
                 withAnimation{
                     isDownloading = false
                     isDownloaded = true
@@ -115,9 +104,6 @@ print("File saved")
                     guard let response = response as? HTTPURLResponse else {return}
 
                     if response.statusCode == 200 {
-                        #if DEBUG
-                        print("File downloaded ")
-                        #endif
 
                         guard let data = data else {
                             withAnimation {

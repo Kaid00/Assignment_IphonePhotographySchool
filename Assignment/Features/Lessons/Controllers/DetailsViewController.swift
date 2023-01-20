@@ -33,53 +33,12 @@ class Details: UIView {
         return label
     }()
     
-    private let nextButton: UIButton = {
-        let button = UIButton(type: .system)
-        return button
-    }()
-    
-    private let nextLessonButton: UIButton = {
-        var config = UIButton.Configuration.plain()
-        config.image = UIImage(systemName: "chevron.right")
-        config.imagePadding = 5
-        config.imagePlacement = .trailing
-        config.preferredSymbolConfigurationForImage = UIImage.SymbolConfiguration(scale: .medium)
-        
-        let button = UIButton(type: .system)
-        button.configuration = config
-        button.configurationUpdateHandler = {  button in
-          var config = button.configuration
-
-          config?.imagePlacement = .trailing
-
-          config?.title = "Next lesson"
-
-          button.configuration = config
-        }
-        
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.setTitle("Next lesson", for: .normal)
-        button.addAction(
-          UIAction { _ in
-              // goto next lessoon
-            print("Touch inside")
-            
-          },
-          for: .touchUpInside
-        )
-        return button
-        
-    }()
-
-    
     init() {
         super.init(frame: .zero)
         backgroundColor = UIColor(named: "background")
         addSubview(titleLabel)
         addSubview(descriptionLabel)
-        addSubview(nextLessonButton)
-
-        
+    
         configureConstraints()
 
     }
@@ -98,19 +57,9 @@ class Details: UIView {
             descriptionLabel.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 20),
             descriptionLabel.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -15)
         ]
-        
-        let nextLessonButtonConstraints = [
-            nextLessonButton.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -50),
-            nextLessonButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -20),
-            nextLessonButton.widthAnchor.constraint(equalToConstant: 140),
-            nextLessonButton.heightAnchor.constraint(equalToConstant: 40)
 
-        ]
-        
         NSLayoutConstraint.activate(titleLabelConstraints)
         NSLayoutConstraint.activate(descriptionLabelConstraints)
-        NSLayoutConstraint.activate(nextLessonButtonConstraints)
-
         
     }
 
